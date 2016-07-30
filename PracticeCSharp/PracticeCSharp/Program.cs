@@ -10,7 +10,17 @@ namespace PracticeCSharp
     {
         static void Main(string[] args)
         {
-            
+            int populationSize = 2;
+            try
+            {
+                var chain = new GraphChain();
+                var evolutionProcess = new Evolution(chain, populationSize);
+                evolutionProcess.StartEvolutionProcess();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + e.StackTrace);
+            }
         }
     }
 }

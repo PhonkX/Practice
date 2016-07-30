@@ -9,29 +9,50 @@ namespace PracticeCSharp
     class Evolution //подумать, надо ли делать отдельный интерфейс, или лучше вынести MakeChain в класс с цепочкой,
                     //и там сразу проверять, а тут проверять, что вернулось
     {
-        private List<IChain> population;
-        private List<IChain> buffer;
+        private List<GraphChain> population;
+        private List<GraphChain> buffer;
         private int populationSize;
         private Random rand;
         private int n; //подумать, как лучше назвать переменную, говорящую, сколько ячеек из цепочки нужно вытащить
 
-        public Evolution(List<IChain> startChains, int n, int populationSize)//TODO: добавить генерацию списка цепочек
+        public Evolution(List<GraphChain> startChains, int n, int populationSize)//TODO: добавить генерацию списка цепочек
         {
             this.population = startChains;
             this.n = n;
             this.populationSize = populationSize;
             rand = new Random();
         }
-        public void MakeEvolution()
+
+        public Evolution(GraphChain chain, int populationSize)
         {
-            // throw new NotImplementedException();
+            this.populationSize = populationSize;
+            population = new List<GraphChain>(this.populationSize);
+            buffer = new List<GraphChain>();
+            rand = new Random();
+            for (int i = 0; i < this.populationSize; ++i)
+            {
+                population.Add(MakeMutation(chain, chain.Length));
+            }
+            n = chain.Length / 2;
+        }
+
+        public void StartEvolutionProcess()
+        {
+            while (true)
+            {
+                MakeEvolutionIteration();
+                InformationAboutTopChain();
+            }
+        }
+
+        public void MakeEvolutionIteration()
+        {
             buffer.Clear();
             foreach (var chain1 in population)
             {
                 foreach (var chain2 in population)
                 {
-                    var newChain = chain1.MakeChain(chain1, chain2, n);//TODO: подумать, как вытащить метод от объекта; может, просто заменить
-                                                                       //на конструктор?
+                    var newChain = new GraphChain(chain1, chain2, n);
                     if (newChain.IsCorrect())
                         buffer.Add(newChain);
                 }
@@ -48,12 +69,55 @@ namespace PracticeCSharp
                 }
             }
             population.Clear();
-            population = buffer.OrderByDescending(chain => chain.Rating()).Take(populationSize).ToList();
+            population = buffer.OrderBy(chain => chain.Rating()).Take(populationSize).ToList();
         }
 
-        public IChain MakeMutation(IChain chain, int numberOfMutatingNodes)
+        public GraphChain MakeMutation(GraphChain chain, int numberOfMutatingNodes)
         {
-            throw new NotImplementedException();
+            if (numberOfMutatingNodes == 0)
+                return chain; //чтобы не копировать лишний раз
+            var tempChain = new GraphChain(chain);
+            int randomColor = -1; //чтобы анализатор студию не ругался на неинициализированную переменную
+            for (int i = 0; i < numberOfMutatingNodes; ++i)
+            {
+                var position = rand.Next(tempChain.Length);
+                var currentColor = tempChain.Chain[position].Color;
+                
+                bool isChainCorrect = false;
+                while (!isChainCorrect)
+                {
+                    while ((randomColor = rand.Next(tempChain.Length + 1)) ==
+                        tempChain.Chain[position].Color) ;
+
+                    tempChain.Chain[position].Color = randomColor;
+
+                    if (tempChain.IsCorrect())
+                    {
+                        isChainCorrect = true;
+                        tempChain.Colors[currentColor]--;
+
+                        if (tempChain.Colors[currentColor] == 0)
+                            tempChain.Colors.Remove(currentColor);
+
+                        if (!tempChain.Colors.Keys.Contains(randomColor))
+                            tempChain.Colors.Add(randomColor, 1);
+                        else
+                            tempChain.Colors[randomColor]++;
+                    }
+                    else
+                    {
+                        tempChain.Chain[position].Color = currentColor;
+                    }
+                }
+            }
+            
+            return tempChain;
+        }
+
+        public void InformationAboutTopChain()
+        {
+            var colorsCount = population.First().Colors.Count;
+            Console.WriteLine("Minimal colors count: {0}", colorsCount);
         }
     }
 }
