@@ -10,10 +10,13 @@ namespace PracticeCSharp
     {
         static void Main(string[] args)
         {
-            int populationSize = 2;
+            var graphReader = new GraphReader();
+            int populationSize = 100;
+            string fileName = "queen5_5.col";
             try
             {
-                var chain = new GraphChain();
+                var nodes = graphReader.ReadGraphFromFile(fileName);
+                var chain = new GraphChain(nodes);
                 var evolutionProcess = new Evolution(chain, populationSize);
                 evolutionProcess.StartEvolutionProcess();
             }

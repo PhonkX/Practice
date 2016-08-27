@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PracticeCSharp
 {
-    class Node
+    public class Node
     {
-        //TODO: сделать соседей
         public int Color;
         public List<int> Neighbours;
         public int Number;
@@ -29,14 +32,14 @@ namespace PracticeCSharp
     }
 
 
-    class GraphChain
+    public class GraphChain
     {
         public List<Node> Chain;
         private int chainSize;
         private int maxColors;
         public Dictionary<int, int> Colors;
 
-        public int Length //нужно ли это?
+        public int Length 
         {
             get
             {
@@ -46,8 +49,6 @@ namespace PracticeCSharp
 
         public GraphChain(int chainSize, int maxColors)
         {
-            //TODO: доделать, сделать генерацию upd: сделать генерацию с вводом графа
-            //TODO: подумать, надо ли делать верификацию сразу
             this.chainSize = chainSize;
             this.maxColors = maxColors;
             Chain = new List<Node>(chainSize);
@@ -64,30 +65,24 @@ namespace PracticeCSharp
 
         public GraphChain()
         {
-            int size = int.Parse(Console.ReadLine());
-            if (size <= 0)
-            {
-                throw new Exception("В графе должно быть положительное число вершин.");
-            }
-
-            Chain = new List<Node>(size);
+            Chain = new List<Node>();
             Colors = new Dictionary<int, int>();
-            for (int i = 0; i < size; ++i)
-            {
-                Chain.Add(new Node(i, i));
-                Colors[i] = 1;
-            }
+        }
 
-            maxColors = size;
-
-            string edgeString;
-            while ((edgeString = Console.ReadLine()) != String.Empty)
+        public GraphChain(List<Node> nodes)
+        {
+            Chain = nodes;
+            Colors = new Dictionary<int, int>();
+            foreach(var node in nodes)
             {
-                var nodes = edgeString.Split(' ');
-                int firstNodePosition = int.Parse(nodes[0]);
-                int secondNodePosition = int.Parse(nodes[1]);
-                Chain[firstNodePosition].Neighbours.Add(secondNodePosition);
-                Chain[secondNodePosition].Neighbours.Add(firstNodePosition);
+                if (Colors.ContainsKey(node.Color))
+                {
+                    Colors[node.Color]++;
+                }
+                else
+                {
+                    Colors.Add(node.Color, 1);
+                }
             }
         }
 

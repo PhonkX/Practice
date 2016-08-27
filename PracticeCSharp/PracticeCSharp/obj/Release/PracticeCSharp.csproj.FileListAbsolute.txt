@@ -1,0 +1,6 @@
+C:\Users\PhonkX\documents\visual studio 2015\Projects\PracticeCSharp\PracticeCSharp\bin\Release\PracticeCSharp.exe.config
+C:\Users\PhonkX\documents\visual studio 2015\Projects\PracticeCSharp\PracticeCSharp\bin\Release\PracticeCSharp.exe
+C:\Users\PhonkX\documents\visual studio 2015\Projects\PracticeCSharp\PracticeCSharp\bin\Release\PracticeCSharp.pdb
+C:\Users\PhonkX\documents\visual studio 2015\Projects\PracticeCSharp\PracticeCSharp\obj\Release\PracticeCSharp.exe
+C:\Users\PhonkX\documents\visual studio 2015\Projects\PracticeCSharp\PracticeCSharp\obj\Release\PracticeCSharp.pdb
+C:\Users\PhonkX\Documents\Visual Studio 2015\Projects\PracticeCSharp\PracticeCSharp\obj\Release\PracticeCSharp.csprojResolveAssemblyReference.cache

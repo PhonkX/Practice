@@ -45,6 +45,7 @@
   <ItemGroup>
     <Compile Include="GraphChain.cs" />
     <Compile Include="Evolution.cs" />
+    <Compile Include="GraphReader.cs" />
     <Compile Include="IChain.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

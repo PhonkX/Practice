@@ -1,26 +1,30 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace PracticeCSharp
 {
-    class Evolution //подумать, надо ли делать отдельный интерфейс, или лучше вынести MakeChain в класс с цепочкой,
-                    //и там сразу проверять, а тут проверять, что вернулось
+    public class Evolution
     {
         private List<GraphChain> population;
         private List<GraphChain> buffer;
         private int populationSize;
         private Random rand;
-        private int n; //подумать, как лучше назвать переменную, говорящую, сколько ячеек из цепочки нужно вытащить
+        private int nodesToTakeFromFirstChain;
+        private HashSet<int> randomPositionsInPopulation;
+        private HashSet<int> randomPositionsInChain;
 
-        public Evolution(List<GraphChain> startChains, int n, int populationSize)//TODO: добавить генерацию списка цепочек
+        public Evolution(List<GraphChain> startChains, int n, int populationSize)
         {
             this.population = startChains;
-            this.n = n;
+            this.nodesToTakeFromFirstChain = n;
             this.populationSize = populationSize;
             rand = new Random();
+            randomPositionsInPopulation = new HashSet<int>();
+            randomPositionsInChain = new HashSet<int>();
         }
 
         public Evolution(GraphChain chain, int populationSize)
@@ -29,32 +33,43 @@ namespace PracticeCSharp
             population = new List<GraphChain>(this.populationSize);
             buffer = new List<GraphChain>();
             rand = new Random();
+            randomPositionsInPopulation = new HashSet<int>();
+            randomPositionsInChain = new HashSet<int>();
             for (int i = 0; i < this.populationSize; ++i)
             {
-                population.Add(MakeMutation(chain, chain.Length));
+                population.Add(MakeChainMutation(chain, chain.Length).Result);
+                Console.WriteLine("Generated {0} chains", i + 1);
             }
-            n = chain.Length / 2;
+            nodesToTakeFromFirstChain = chain.Length / 2;
         }
 
-        public void StartEvolutionProcess()
+        public async Task StartEvolutionProcess()
         {
+            int iteration = 1;
+            Stopwatch stopwatch = Stopwatch.StartNew();
             while (true)
             {
-                MakeEvolutionIteration();
-                InformationAboutTopChain();
+                await MakeEvolutionIteration();
+                InformationAboutTopChain(stopwatch.Elapsed, iteration++);
             }
         }
 
-        public void MakeEvolutionIteration()
+        public async Task MakeEvolutionIteration()
         {
+            await MakeMutationInPopulation(population);
             buffer.Clear();
             foreach (var chain1 in population)
             {
                 foreach (var chain2 in population)
                 {
-                    var newChain = new GraphChain(chain1, chain2, n);
-                    if (newChain.IsCorrect())
-                        buffer.Add(newChain);
+                    if (chain1 != chain2) // тут такое сравнение сработает, поскольку список один и тот же
+                    {
+                        var newChain = new GraphChain(chain1, chain2, nodesToTakeFromFirstChain);
+                        if (newChain.IsCorrect())
+                        {
+                            buffer.Add(newChain);
+                        }
+                    }
                 }
             }
             if (buffer.Count < populationSize)
@@ -62,25 +77,46 @@ namespace PracticeCSharp
                 for (int i = buffer.Count; i < populationSize; ++i)
                 {
                     int mutatingChainPosition = rand.Next(buffer.Count);
-                    buffer.Add(MakeMutation(
+                    buffer.Add(await MakeChainMutation(
                                buffer[mutatingChainPosition],
-                               rand.Next(buffer[mutatingChainPosition].Length)
+                               rand.Next(buffer[mutatingChainPosition].Length - 1) + 1 // чтобы точно что-то поменялось;
                                ));
                 }
             }
+
             population.Clear();
             population = buffer.OrderBy(chain => chain.Rating()).Take(populationSize).ToList();
         }
 
-        public GraphChain MakeMutation(GraphChain chain, int numberOfMutatingNodes)
+        public async Task MakeMutationsAndAddToBuffer(List<GraphChain> buffer)
+        {
+            randomPositionsInPopulation.Clear(); 
+            int position = 0;
+            var mutationCount = rand.Next(populationSize - 1) + 1;
+            for (int i = 0; i < mutationCount; ++i)
+            {
+                while (randomPositionsInPopulation.Contains(position = rand.Next(populationSize)));
+                randomPositionsInPopulation.Add(position);
+
+                var chainToMutate = population[position];
+                var newChain = await MakeChainMutation(chainToMutate, rand.Next(chainToMutate.Length));
+                buffer.Add(newChain);
+            }
+        }
+
+        public async Task<GraphChain> MakeChainMutation(GraphChain chain, int numberOfMutatingNodes)
         {
             if (numberOfMutatingNodes == 0)
                 return chain; //чтобы не копировать лишний раз
             var tempChain = new GraphChain(chain);
+            randomPositionsInChain.Clear();
             int randomColor = -1; //чтобы анализатор студию не ругался на неинициализированную переменную
+            int position = 0;
             for (int i = 0; i < numberOfMutatingNodes; ++i)
             {
-                var position = rand.Next(tempChain.Length);
+                while (randomPositionsInChain.Contains(position = rand.Next(tempChain.Length)));
+                randomPositionsInChain.Add(position);
+                
                 var currentColor = tempChain.Chain[position].Color;
                 
                 bool isChainCorrect = false;
@@ -114,9 +150,24 @@ namespace PracticeCSharp
             return tempChain;
         }
 
-        public void InformationAboutTopChain()
+        public async Task MakeMutationInPopulation(List<GraphChain> population)
+        {
+            int position = 0;
+            var mutationCount = rand.Next(populationSize - 1) + 1;
+            for (int i = 0; i < mutationCount; ++i)
+            {
+                position = rand.Next(populationSize);
+                var chainToMutate = population[position];
+                chainToMutate = await MakeChainMutation(chainToMutate, rand.Next(chainToMutate.Length));
+                population[position] = chainToMutate;
+            }
+        }
+
+        public async Task InformationAboutTopChain(TimeSpan elapsed, int iteration)
         {
             var colorsCount = population.First().Colors.Count;
+            Console.WriteLine("Elapsed time: {0} ", elapsed.ToString());
+            Console.WriteLine("Iteration: {0}", iteration);
             Console.WriteLine("Minimal colors count: {0}", colorsCount);
         }
     }
